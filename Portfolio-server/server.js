@@ -28,6 +28,7 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
   process.env.ADMIN_URL,
   process.env.CORS_ORIGINS,
+  "https://portfolio-ten-sage-xzaeaoufzn.vercel.app",
   "https://portfolio-admin-ruby-sigma.vercel.app",
   "https://portfolio-ohlz7987q-usmans-projects-6f920032.vercel.app",
 ]
