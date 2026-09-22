@@ -1,0 +1,13 @@
+const mongoose = require("mongoose");
+
+const skillSchema = new mongoose.Schema(
+  {
+    icon: { type: String, default: "💡" },
+    name: { type: String, required: true },
+    percent: { type: Number, required: true, min: 0, max: 100 },
+    order: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Skill", skillSchema);
