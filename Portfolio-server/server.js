@@ -15,6 +15,7 @@ const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
+// --- CORS CONFIGURATION ---
 const normalizeOrigin = (value) => {
   try {
     return new URL(value.trim()).origin;
@@ -45,6 +46,7 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -64,13 +66,15 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
+// --- DATABASE CONNECTION & SERVER START ---
+// These checks are now INSIDE the connection logic, so the server doesn't crash before starting.
 if (!process.env.MONGO_URI) {
-  console.error("❌ MONGO_URI is missing from .env");
+  console.error("❌ MONGO_URI is missing. Please add it to Render's Environment Variables.");
   process.exit(1);
 }
 
 if (/<[^>]+>/.test(process.env.MONGO_URI)) {
-  console.error("❌ MONGO_URI still contains a placeholder. Replace it with your MongoDB Atlas connection string.");
+  console.error("❌ MONGO_URI still contains a placeholder. Replace it with your real connection string.");
   process.exit(1);
 }
 
@@ -78,6 +82,7 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
+    // The server ONLY starts listening AFTER a successful DB connection
     app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
   })
   .catch((err) => {
