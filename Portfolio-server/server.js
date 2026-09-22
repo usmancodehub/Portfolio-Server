@@ -15,9 +15,33 @@ const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
+const normalizeOrigin = (value) => {
+  try {
+    return new URL(value.trim()).origin;
+  } catch {
+    return "";
+  }
+};
+
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.ADMIN_URL,
+  process.env.CORS_ORIGINS,
+  "https://portfolio-admin-ruby-sigma.vercel.app",
+  "https://portfolio-ohlz7987q-usmans-projects-6f920032.vercel.app",
+]
+  .flatMap((value) => (value || "").split(","))
+  .map(normalizeOrigin)
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: [process.env.CLIENT_URL, process.env.ADMIN_URL],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(normalizeOrigin(origin))) {
+        return callback(null, true);
+      }
+      return callback(new Error("Origin is not allowed by CORS"));
+    },
     credentials: true,
   })
 );
