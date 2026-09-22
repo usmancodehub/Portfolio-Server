@@ -40,6 +40,16 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
+if (!process.env.MONGO_URI) {
+  console.error("❌ MONGO_URI is missing from .env");
+  process.exit(1);
+}
+
+if (/<[^>]+>/.test(process.env.MONGO_URI)) {
+  console.error("❌ MONGO_URI still contains a placeholder. Replace it with your MongoDB Atlas connection string.");
+  process.exit(1);
+}
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
