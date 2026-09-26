@@ -21,17 +21,13 @@ const transporter = nodemailer.createTransport({
  * @param {string} [opts.replyTo] - optional reply-to address
  */
 
-async function sendEmail({ to, subject, html, replyTo }) {
-  if (!to || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error("Email not sent: recipient or SMTP credentials are missing");
-    return { success: false, error: "Email configuration is incomplete" };
-  }
-
+async function sendEmail({ to, subject, html, text, replyTo }) {
   const mailOptions = {
     from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
     to,
     subject,
     html,
+    text,          // ← plain-text fallback
     replyTo,
   };
 
@@ -40,8 +36,8 @@ async function sendEmail({ to, subject, html, replyTo }) {
     console.log("✅ Email sent:", info.messageId, "→", to);
     return { success: true, messageId: info.messageId };
   } catch (err) {
-    console.error("Email failed:", err.code || err.message);
-    return { success: false, error: err.code || err.message };
+    console.error("❌ Email failed:", err.message);
+    return { success: false, error: err.message };
   }
 }
 
