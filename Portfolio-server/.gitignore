@@ -1,0 +1,7 @@
+Portfolio-server/.env
+Portfolio-server/.env.*
+**/.env
+Portfolio-server/!.env.example
+**/.env/
+**/node_modules/
+node_modules/

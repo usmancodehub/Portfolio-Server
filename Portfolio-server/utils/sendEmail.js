@@ -20,6 +20,12 @@ const transporter = nodemailer.createTransport({
  * @param {string} opts.html      - HTML body
  * @param {string} [opts.replyTo] - optional reply-to address
  */
+
+
+
+
+
+
 async function sendEmail({ to, subject, html, replyTo }) {
   if (!to || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.error("Email not sent: recipient or SMTP credentials are missing");
