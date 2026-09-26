@@ -35,8 +35,8 @@ exports.createContact = async (req, res, next) => {
       date: dateStr,
     });
 
-    // 3. Send emails in parallel (don't block the response on email failures)
-    Promise.all([
+    // 3. Send both emails and report delivery status to the form.
+    const [visitorEmail, adminEmail] = await Promise.all([
       // → Visitor: Thank you
       sendEmail({
         to: email,
@@ -51,12 +51,23 @@ exports.createContact = async (req, res, next) => {
         html: adminHtml,
         replyTo: email,
       }),
-    ]).catch((err) => console.error("Email sending error:", err));
+    ]);
 
-    // 4. Respond immediately
+    const emailsSent = visitorEmail.success && adminEmail.success;
+    const responseMessage = emailsSent
+      ? "Message received! A confirmation email has been sent."
+      : !adminEmail.success
+        ? "Your message was saved, but the email notification could not be sent. Please contact us directly if your request is urgent."
+        : "Your message was received, but the confirmation email could not be sent.";
+
+    // 4. The message is saved even when SMTP delivery fails.
     res.status(201).json({
       success: true,
-      message: "Message received! Check your email for confirmation.",
+      message: responseMessage,
+      emailDelivery: {
+        confirmation: visitorEmail.success,
+        notification: adminEmail.success,
+      },
       data: contact,
     });
   } catch (err) {

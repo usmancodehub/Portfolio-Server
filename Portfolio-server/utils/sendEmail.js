@@ -1,10 +1,11 @@
 const nodemailer = require("nodemailer");
 
 // Create a reusable transporter
+const port = Number(process.env.EMAIL_PORT) || 587;
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || "smtp.gmail.com",
-  port: Number(process.env.EMAIL_PORT) || 587,
-  secure: false,                 // TLS via STARTTLS on port 587
+  port,
+  secure: port === 465,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -20,6 +21,11 @@ const transporter = nodemailer.createTransport({
  * @param {string} [opts.replyTo] - optional reply-to address
  */
 async function sendEmail({ to, subject, html, replyTo }) {
+  if (!to || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error("Email not sent: recipient or SMTP credentials are missing");
+    return { success: false, error: "Email configuration is incomplete" };
+  }
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
     to,
@@ -33,8 +39,8 @@ async function sendEmail({ to, subject, html, replyTo }) {
     console.log("✅ Email sent:", info.messageId, "→", to);
     return { success: true, messageId: info.messageId };
   } catch (err) {
-    console.error("❌ Email failed:", err.message);
-    return { success: false, error: err.message };
+    console.error("Email failed:", err.code || err.message);
+    return { success: false, error: err.code || err.message };
   }
 }
 
