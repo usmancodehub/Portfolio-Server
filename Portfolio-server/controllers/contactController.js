@@ -1,13 +1,16 @@
 const Contact = require("../models/Contact");
 const { sendEmail } = require("../utils/sendEmail");
-const { thankYouTemplate } = require("../templates/thankYouTemplate");
-const { adminNotifyTemplate } = require("../templates/adminNotifyTemplate");
+const {
+  thankYouTemplate,
+  thankYouText,
+} = require("../templates/thankYouTemplate");
+const {
+  adminNotifyTemplate,
+  adminNotifyText,
+} = require("../templates/adminNotifyTemplate");
 
 /* ---------------------------------------------------------------------------
    POST /api/contact
-   - Saves message to DB
-   - Sends thank-you email to visitor
-   - Sends notification email to admin
 --------------------------------------------------------------------------- */
 exports.createContact = async (req, res, next) => {
   try {
@@ -17,57 +20,36 @@ exports.createContact = async (req, res, next) => {
       return res.status(400).json({ message: "All fields required" });
     }
 
-    // 1. Save to database
+    // Save to DB
     const contact = await Contact.create({ name, email, subject, message });
 
-    // 2. Prepare email payloads
+    // Prepare dates
     const dateStr = new Date().toLocaleString("en-US", {
       dateStyle: "medium",
       timeStyle: "short",
     });
 
-    const visitorHtml = thankYouTemplate({ name, subject, message });
-    const adminHtml = adminNotifyTemplate({
-      name,
-      email,
-      subject,
-      message,
-      date: dateStr,
-    });
-
-    // 3. Send both emails and report delivery status to the form.
-    const [visitorEmail, adminEmail] = await Promise.all([
-      // → Visitor: Thank you
+    // Send both emails with HTML + plain-text version
+    Promise.all([
       sendEmail({
         to: email,
-        subject: "Thanks for reaching out! ✨",
-        html: visitorHtml,
+        subject: `Re: ${subject}`,
+        html: thankYouTemplate({ name, subject, message }),
+        text: thankYouText({ name, subject, message }),
       }),
 
-      // → You: Notification (with reply-to so you can reply to the visitor)
       sendEmail({
         to: process.env.EMAIL_USER,
-        subject: `📬 New message from ${name}`,
-        html: adminHtml,
+        subject: `New message from ${name}`,
+        html: adminNotifyTemplate({ name, email, subject, message, date: dateStr }),
+        text: adminNotifyText({ name, email, subject, message, date: dateStr }),
         replyTo: email,
       }),
-    ]);
+    ]).catch((err) => console.error("Email sending error:", err));
 
-    const emailsSent = visitorEmail.success && adminEmail.success;
-    const responseMessage = emailsSent
-      ? "Message received! A confirmation email has been sent."
-      : !adminEmail.success
-        ? "Your message was saved, but the email notification could not be sent. Please contact us directly if your request is urgent."
-        : "Your message was received, but the confirmation email could not be sent.";
-
-    // 4. The message is saved even when SMTP delivery fails.
     res.status(201).json({
       success: true,
-      message: responseMessage,
-      emailDelivery: {
-        confirmation: visitorEmail.success,
-        notification: adminEmail.success,
-      },
+      message: "Message received! Check your email for confirmation.",
       data: contact,
     });
   } catch (err) {
@@ -76,7 +58,7 @@ exports.createContact = async (req, res, next) => {
 };
 
 /* ---------------------------------------------------------------------------
-   GET /api/contact  (admin)
+   GET /api/contact (admin)
 --------------------------------------------------------------------------- */
 exports.getAll = async (req, res, next) => {
   try {
@@ -87,7 +69,7 @@ exports.getAll = async (req, res, next) => {
 };
 
 /* ---------------------------------------------------------------------------
-   PUT /api/contact/:id/read  (admin)
+   PUT /api/contact/:id/read (admin)
 --------------------------------------------------------------------------- */
 exports.markRead = async (req, res, next) => {
   try {
@@ -103,7 +85,7 @@ exports.markRead = async (req, res, next) => {
 };
 
 /* ---------------------------------------------------------------------------
-   DELETE /api/contact/:id  (admin)
+   DELETE /api/contact/:id (admin)
 --------------------------------------------------------------------------- */
 exports.remove = async (req, res, next) => {
   try {
