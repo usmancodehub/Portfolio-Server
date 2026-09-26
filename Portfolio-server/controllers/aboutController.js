@@ -1,34 +1,45 @@
 const About = require("../models/About");
-const fs = require("fs");
-const path = require("path");
+const { uploadToR2, deleteFromR2 } = require("../utils/r2Client");
 
-const deleteFile = (url) => {
-  if (!url) return;
-  const filePath = path.join(__dirname, "..", url.replace(/^\/+/, ""));
-  if (fs.existsSync(filePath)) {
-    try { fs.unlinkSync(filePath); } catch (e) { /* ignore */ }
-  }
-};
-
-// GET /api/about
+/* ---------------------------------------------------------------------------
+   GET /api/about
+--------------------------------------------------------------------------- */
 exports.get = async (req, res, next) => {
   try {
     let about = await About.findOne();
-    if (!about) about = await About.create({ bio: "Welcome to my portfolio." });
+    if (!about) {
+      about = await About.create({ bio: "Welcome to my portfolio." });
+    }
     res.json(about);
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 };
 
-// PUT /api/about  (multipart/form-data — accepts portrait image)
+/* ---------------------------------------------------------------------------
+   PUT /api/about
+   multipart/form-data — accepts portrait image
+--------------------------------------------------------------------------- */
 exports.update = async (req, res, next) => {
   try {
     const data = { ...req.body };
 
-    // If a new portrait was uploaded, replace the old one
+    // ---------- If a new portrait was uploaded, upload to R2 and delete the old one ----------
     if (req.file) {
       const old = await About.findOne();
-      if (old && old.portrait) deleteFile(old.portrait);
-      data.portrait = `/uploads/${req.file.filename}`;
+
+      // Delete previous portrait from R2
+      if (old && old.portrait) {
+        await deleteFromR2(old.portrait);
+      }
+
+      // Upload new portrait to R2 under the "about" folder
+      data.portrait = await uploadToR2(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype,
+        "about"
+      );
     }
 
     let about = await About.findOne();
@@ -38,17 +49,28 @@ exports.update = async (req, res, next) => {
       about = await About.findByIdAndUpdate(about._id, data, { new: true });
     }
     res.json(about);
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 };
 
-// DELETE /api/about/portrait
+/* ---------------------------------------------------------------------------
+   DELETE /api/about/portrait
+--------------------------------------------------------------------------- */
 exports.removePortrait = async (req, res, next) => {
   try {
     const about = await About.findOne();
     if (!about) return res.status(404).json({ message: "About not found" });
-    if (about.portrait) deleteFile(about.portrait);
+
+    // Delete portrait from R2
+    if (about.portrait) {
+      await deleteFromR2(about.portrait);
+    }
+
     about.portrait = "";
     await about.save();
     res.json(about);
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 };
