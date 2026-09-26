@@ -18,28 +18,6 @@ const app = express();
 
 
 
-app.get("/api/test-email", async (req, res) => {
-  try {
-    const { sendEmail } = require("./utils/sendEmail");
-    const result = await sendEmail({
-      to: process.env.EMAIL_USER,
-      subject: "Test from production",
-      html: "<p>If you see this, SMTP works!</p>",
-      text: "If you see this, SMTP works!",
-    });
-    res.json({
-      env: {
-        host: process.env.EMAIL_HOST,
-        port: process.env.EMAIL_PORT,
-        user: process.env.EMAIL_USER ? "set" : "MISSING",
-        pass: process.env.EMAIL_PASS ? "set" : "MISSING",
-      },
-      result,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message, stack: err.stack });
-  }
-});
 
 
 
