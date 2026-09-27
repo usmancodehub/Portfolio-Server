@@ -1,28 +1,52 @@
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Create a reusable transporter
+const port = Number(process.env.EMAIL_PORT) || 587;
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || "smtp.gmail.com",
+  port,
+  secure: port === 465,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
-async function sendEmail({ to, subject, html, text, replyTo }) {
+/**
+ * Send a single email
+ * @param {object} opts
+ * @param {string} opts.to        - recipient email
+ * @param {string} opts.subject   - email subject
+ * @param {string} opts.html      - HTML body
+ * @param {string} [opts.replyTo] - optional reply-to address
+ */
+
+
+
+
+
+
+async function sendEmail({ to, subject, html, replyTo }) {
+  if (!to || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error("Email not sent: recipient or SMTP credentials are missing");
+    return { success: false, error: "Email configuration is incomplete" };
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    to,
+    subject,
+    html,
+    replyTo,
+  };
+
   try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || "Portfolio <onboarding@resend.dev>",
-      to: [to],
-      subject,
-      html,
-      text,
-      reply_to: replyTo ? [replyTo] : undefined,
-    });
-
-    if (error) {
-      console.error("❌ Resend error:", error.message);
-      return { success: false, error: error.message };
-    }
-
-    console.log("✅ Email sent:", data.id, "→", to);
-    return { success: true, messageId: data.id };
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Email sent:", info.messageId, "→", to);
+    return { success: true, messageId: info.messageId };
   } catch (err) {
-    console.error("❌ Email exception:", err.message);
-    return { success: false, error: err.message };
+    console.error("Email failed:", err.code || err.message);
+    return { success: false, error: err.code || err.message };
   }
 }
 
