@@ -12,7 +12,7 @@ const toolRoutes = require("./routes/toolRoutes");
 const aboutRoutes = require("./routes/aboutRoutes");
 const settingRoutes = require("./routes/settingRoutes");
 const errorHandler = require("./middleware/errorHandler");
-const marqueeRoutes = require("./routes/marqueeRoutes");sss
+const marqueeRoutes = require("./routes/marqueeRoutes");
 const app = express();
 
 
