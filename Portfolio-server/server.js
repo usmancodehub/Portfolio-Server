@@ -68,12 +68,13 @@ app.use("/api/skills", skillRoutes);
 app.use("/api/tools", toolRoutes);
 app.use("/api/about", aboutRoutes);
 app.use("/api/settings", settingRoutes);
+app.use("/api/marquee", marqueeRoutes);
+
 
 app.get("/", (req, res) => res.send("MERN Portfolio API running 🚀"));
 
 app.use((req, res) => res.status(404).json({ message: "Route not found" }));
 app.use(errorHandler);
-app.use("/api/marquee", marqueeRoutes);
 
 const PORT = process.env.PORT || 5000;
 
