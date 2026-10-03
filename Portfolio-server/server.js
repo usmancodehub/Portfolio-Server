@@ -12,6 +12,7 @@ const toolRoutes = require("./routes/toolRoutes");
 const aboutRoutes = require("./routes/aboutRoutes");
 const settingRoutes = require("./routes/settingRoutes");
 const errorHandler = require("./middleware/errorHandler");
+const marqueeRoutes = require("./routes/marqueeRoutes");s
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.get("/", (req, res) => res.send("MERN Portfolio API running 🚀"));
 
 app.use((req, res) => res.status(404).json({ message: "Route not found" }));
 app.use(errorHandler);
+app.use("/api/marquee", marqueeRoutes);
 
 const PORT = process.env.PORT || 5000;
 
